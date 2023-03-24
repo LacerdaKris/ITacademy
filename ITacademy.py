@@ -49,8 +49,34 @@ while opcao !=4:
     print(f"De {origem} para {destino}, utilizando um caminhão de porte {tamanho}, a distância é de {distancia} km, e o custo será de R$ {custo_trecho:.2f}.")
 
   elif opcao == 2:
-    print("Cadastro de transporte")
-    cidades = input("Digite quais cidades serão percorridas, separe-as com vírgula: ").split(",")
+    #cria lista com as cidades digitadas, e passa pra outra removendo os espaços em branco no início/fim
+    input_cidades = input("Digite quais cidades serão percorridas, separe-as com vírgula: ").split(",")
+    cidades = [cidade.strip() for cidade in input_cidades]
+    
+    #dicionário p/ armazenar os pares de trecho entre cidades, e um acumulador do total
+    distancias_cidades = {}
+    km_total = 0
+    
+    #começa a iterar as cidades pela segunda da lista (indice 1)
+    for i in range(1, len(cidades)):
+      #retira acentos e deixa todos os caracteres em maiúsculo
+      cidade_anterior = unidecode(cidades[i-1]).upper()
+      cidade_atual = unidecode(cidades[i]).upper()
+    
+      origem_posicao = distancias.columns.get_loc(cidade_anterior)
+      destino_posicao = distancias.columns.get_loc(cidade_atual)
+      distancia = distancias.iloc[origem_posicao, destino_posicao]
+      
+      #cria chave e valor do par, armazena com a dstancia no dict e soma ao acumulador
+      chave = cidade_anterior + " - " + cidade_atual
+      valor = distancia
+      distancias_cidades[chave] = valor
+      km_total += valor
+    
+      #prepara valor da cidade anterior para próxima iteração
+      cidade_anterior = cidade_atual
+
+    #cria dicionário para armazenar os itens e seus respectivos pesos
     itens = {}
     
     while True:
@@ -61,6 +87,8 @@ while opcao !=4:
       mais_itens = input('Incluir mais itens? (S/N): ')
       if mais_itens.lower() != 's':
         break
+
+
       
   elif opcao == 3:
     print("Dados estatísticos")
