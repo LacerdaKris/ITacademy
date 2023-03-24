@@ -3,13 +3,11 @@ from unidecode import unidecode
 
 distancias = pd.read_csv('DNIT-Distancias.csv', delimiter=';', header=None)
 # Extrai a primeira linha como lista e define como cabeçalho das colunas
-cidades = distancias.iloc[0].tolist()
-# Define a primeira coluna do DataFrame com a lista de cidades
-distancias.insert(0, 'Cidades', cidades)
-# Define a primeira coluna como índice
-distancias = distancias.set_index('Cidades')
+distancias.columns = distancias.iloc[0].tolist()
 # Remove a primeira linha do DataFrame
-distancias = distancias.drop('')
+distancias = distancias.drop(index=0)
+# Define a primeira coluna como índice
+distancias = distancias.set_index(distancias.columns[0])
 print(distancias)
 
 #custo por km de cada caminhão
