@@ -88,7 +88,26 @@ while opcao !=4:
       if mais_itens.lower() != 's':
         break
 
+    paradas = input("Haverão paradas para descarregamento no trajeto? (S/N): ")
+    if paradas.lower() == 's':
+      input_paradas = input("Em quais cidades haverá paradas com retirada de carga, separe-as com vírgula: ").split(",")
+      paradas_cidades = [parada.strip() for parada in input_paradas]
+      paradas_itens = []
+      for cidade in paradas_cidades:
+        input_itens_cidade = input(f"Quais itens serão retirados em {cidade}? Separe-os com vírgula: ").split(",")
+        itens_cidade = [item.strip() for item in input_itens_cidade]
+        paradas_itens.append({cidade.upper(): [item.upper() for item in itens_cidade]})
 
+      #organiza as paradas num dicionário com arrays
+      paradas_itens_dict = {}
+      for parada in paradas_itens:
+        for cidade, item in parada.items():
+          paradas_itens_dict[unidecode(cidade)] = item
+    
+    else:
+      paradas_itens_dict = {}
+
+    print(f'paradas itens dict: {paradas_itens_dict}')
       
   elif opcao == 3:
     print("Dados estatísticos")
