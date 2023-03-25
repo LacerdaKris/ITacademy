@@ -6,6 +6,9 @@ distancias = pd.read_csv('DNIT-Distancias.csv', delimiter=';', header=0)
 #custo por km rodado de cada caminhão
 custo_caminhoes = {'P': 4.87, 'M': 11.92, 'G': 27.44}
 
+#lista para armazenar os transportes cadastrados na opção 2 do menu
+transportes_cadastrados = []
+
 def menu():
   print("Menu:")
   print("1- Consultar trechos e modalidade")
@@ -109,6 +112,10 @@ while opcao !=4:
     
     else:
       paradas_itens_dict = {}
+
+
+
+
 
       
   elif opcao == 3:
