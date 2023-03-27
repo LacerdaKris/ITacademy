@@ -6,7 +6,7 @@ custo_caminhoes = {'P': 4.87, 'M': 11.92, 'G': 27.44}
 
 # informações apenas para teste
 km_total = 13000
-itens = {'LANCHA': 10000, 'SUV': 8000, 'CARRO': 3000, 'MOTO': 2000}
+itens = {'LANCHA': 8000, 'SUV': 1000, 'CARRO': 700, 'MOTO': 700}
 peso_total_carga = sum(itens.values())
 
 '''       DAQUI PRA BAIXO AINDA NÃO ESTÁ NO CÓDIGO GERAL ! ! ! ! ! ! ! ! ! !      '''
@@ -41,10 +41,10 @@ itens_ordenados_por_peso = dict(sorted(itens.items(), key=lambda x: x[1], revers
 itens_ordenados_restantes = itens_ordenados_por_peso.copy()
 
 while peso_atual_carga > 0:
+  
   #itera nos itens da carga do maior ao menor peso
   for item, peso in itens_ordenados_por_peso.items():
     #tenta colocar o item no menor caminhão que ainda tem capacidade
-
     adicionado = False
     for modelo in ['G', 'M', 'P']:
       capacidade = capacidade_atual_caminhoes[modelo]
@@ -53,20 +53,19 @@ while peso_atual_carga > 0:
         peso_atual_carga -= peso
         capacidade_atual_caminhoes[modelo] -= peso
         itens_atual_caminhoes[modelo].append(item)
-        #so modelo em que o item foi incluído for G e
-        #a capacidade atual ficar menor que o item mais leve, limpá-lo
+        #se o modelo em que o item foi incluído for G e
+        #a capacidade atual ficar menor que o item restante mais leve, limpá-lo
         item_mais_leve = min(itens_ordenados_restantes.values())
         if (modelo == 'G') and (capacidade_atual_caminhoes['G'] < item_mais_leve):
-          capacidade_atual_caminhoes[modelo] = 10000 
+          capacidade_atual_caminhoes['G'] = 10000 
           caminhoes_necessarios['G'] += 1
           itens_ordenados_restantes.pop(item)
-          #exclui os demais itens da lista que correspondem a 'G' em itens_atual_caminhoes
-          for item in list(itens_ordenados_restantes.keys()):
-            if item in itens_atual_caminhoes.get('G', []):
-              itens_ordenados_restantes.pop(item)
+          #exclui demais itens de 'G' em itens_ordenados_restantes e itens_atual_caminhoes
+          for item_residual in list(itens_ordenados_restantes.keys()):
+            if item_residual in itens_atual_caminhoes.get('G', []):
+              itens_ordenados_restantes.pop(item_residual)
           itens_atual_caminhoes['G'] = []
           
-
         #verifica se o item já estava em outro caminhão, se sim, remove do caminhão anterior
         for tamanho, itens_array in itens_atual_caminhoes.items():
           if item in itens_array and tamanho != modelo:
@@ -75,8 +74,6 @@ while peso_atual_carga > 0:
 
         adicionado = True
         break
-
-    print(f'Adicionado:{adicionado}')
             
     #se o item não couber em nenhum dos caminhões
     if not adicionado:
@@ -107,12 +104,6 @@ while peso_atual_carga > 0:
               capacidade_atual_caminhoes['G'] = 10000
               peso_atual_carga = sum(itens_ordenados_por_peso.values())
               break
-
-    print(f'caminhões necessários na iteração: {item}\n{caminhoes_necessarios}')
-    print(f'itens ordenados a cada iteração:\n{itens_ordenados_restantes}')
-    print(f'itens por caminhão a cada iteração:\n{itens_atual_caminhoes}')
-    print(f'capacidade caminhões:\n{capacidade_atual_caminhoes}\n')
-
 
   itens_restantes = list(itens_ordenados_restantes)
   
@@ -147,9 +138,7 @@ while peso_atual_carga > 0:
         capacidade_atual_caminhoes = {'P': capacidade_caminhoes['P'], 'M': capacidade_caminhoes['M'], 'G': capacidade_caminhoes['G']}
     return possiveis_combinacoes
 
-  if itens_restantes_dict:
-    print(f'ITENS RESTANTES:\n{itens_restantes_dict}\n')
-    
+  if itens_restantes_dict:    
     possiveis_combinacoes = distribuir_itens_restantes(capacidade_caminhoes, itens_restantes_dict)
     peso_atual_carga = 0
     itens_restantes_dict = {} 
@@ -168,12 +157,6 @@ while peso_atual_carga > 0:
           caminhoes_necessarios[caminhao] += combinacao[caminhao]
         break
 
-  print(f'__________________________________\n')
-
-print(f'itens por caminhão no final:\n{itens_atual_caminhoes}')
-print(f'caminhões necessários no final:\n{caminhoes_necessarios}')
-
-'''
 #calcula o custo total pela qtd de cada caminhão X km
 lista_necessariosXcusto = []
 for tamanho, quantidade in caminhoes_necessarios.items():
@@ -185,4 +168,8 @@ custo_total = sum(lista_necessariosXcusto)*km_total
 print("Para transportar a carga, serão necessários:")
 for modelo, qtd in caminhoes_necessarios.items():
   if qtd > 0:
-    print(f"{qtd} caminhão(ões) de porte {modelo}") '''
+    print(f"{qtd} caminhão(ões) de porte {modelo}")
+
+'''
+print(f'de PORTO ALEGRE para SÃO PAULO, a distância a ser percorrida é de X km, para transporte dos produtos X, Y , Z será necessário utilizar 2 caminhões de porte PEQUENO e um de porte MÉDIO, de forma a resultar no menor custo de transporte por km rodado. O valor total do transporte dos itens é R$ xxx,00, sendo R$ xxx,00 é o custo unitário médio.')
+'''
