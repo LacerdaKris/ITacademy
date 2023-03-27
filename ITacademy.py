@@ -3,6 +3,8 @@ from unidecode import unidecode
 
 distancias = pd.read_csv('DNIT-Distancias.csv', delimiter=';', header=0)
 
+#capacidade máxima de cada caminhão em kg
+capacidade_caminhoes = {'P': 1000, 'M': 4000, 'G': 10000}
 #custo por km rodado de cada caminhão
 custo_caminhoes = {'P': 4.87, 'M': 11.92, 'G': 27.44}
 
@@ -53,7 +55,7 @@ while opcao !=4:
 
   elif opcao == 2:
     #cria lista com as cidades digitadas, e passa pra outra removendo os espaços em branco no início/fim
-    input_cidades = input("Digite as cidades na ordem em que serão percorridas, separe-as com vírgula: ").split(",")
+    input_cidades = input("Digite quais cidades serão percorridas, separe-as com vírgula: ").split(",")
     cidades = [cidade.strip() for cidade in input_cidades]
     
     #dicionário p/ armazenar os pares de trecho entre cidades, e um acumulador do total
@@ -111,12 +113,12 @@ while opcao !=4:
       for parada in paradas_itens:
         for cidade, item in parada.items():
           paradas_itens_dict[unidecode(cidade)] = item
-
+    
     else:
       paradas_itens_dict = {}
 
-  #  >>> INCLUIR TRECHO DO MÓDULO TESTE AQUI <<<
-
+#  >>> INCLUIR TRECHO DO MÓDULO TESTE AQUI <<<
+      
   elif opcao == 3:
     print("Dados estatísticos")
   elif opcao == 4:
