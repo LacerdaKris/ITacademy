@@ -16,6 +16,7 @@ custo_caminhoes = {'P': 4.87, 'M': 11.92, 'G': 27.44}
 
 #função para distribuir os itens da melhor forma entre caminhões
 def distribuir_itens_caminhoes(capacidade_caminhoes, itens):
+
   #identifica quantidade e modelo do(s) caminhão(ões) necessário(s) para o transporte
   caminhoes_necessarios = {'P': 0, 'M': 0, 'G': 0}
   capacidade_atual_caminhoes = capacidade_caminhoes
@@ -50,7 +51,7 @@ def distribuir_itens_caminhoes(capacidade_caminhoes, itens):
     
     #itera nos itens da carga do maior ao menor peso
     for item, peso in itens_ordenados_por_peso.items():
-      #tenta colocar o item no menor caminhão que ainda tem capacidade
+      #tenta colocar o item no maior caminhão que ainda tem capacidade
       adicionado = False
       for modelo in ['G', 'M', 'P']:
         capacidade = capacidade_atual_caminhoes[modelo]
@@ -59,6 +60,19 @@ def distribuir_itens_caminhoes(capacidade_caminhoes, itens):
           peso_atual_carga -= peso
           capacidade_atual_caminhoes[modelo] -= peso
           itens_atual_caminhoes[modelo].append(item)
+          #calcula a capacidade restante em todos os caminhões após a inclusão do item
+          capacidades_restantes = {k: v-peso if k==modelo else v for k,v in capacidade_atual_caminhoes.items()}
+          #escolhe o caminhão que deixaria a menor capacidade restante
+          modelo_menor_restante = min(capacidades_restantes, key=capacidades_restantes.get)
+          capacidade_menor_restante = capacidades_restantes[modelo_menor_restante]
+          #se a capacidade restante desse caminhão for menor que a do caminhão em que o item foi colocado,
+          #remove o item do caminhão atual e adiciona no outro
+          if capacidade_menor_restante < capacidade_atual_caminhoes[modelo]:
+            itens_atual_caminhoes[modelo_menor_restante].append(item)
+            capacidade_atual_caminhoes[modelo_menor_restante] -= peso
+            itens_atual_caminhoes[modelo].remove(item)
+            capacidade_atual_caminhoes[modelo] += peso
+          
           #se o modelo em que o item foi incluído for G e
           #a capacidade atual ficar menor que o item restante mais leve, limpá-lo
           item_mais_leve = min(itens_ordenados_restantes.values())
@@ -165,38 +179,55 @@ def distribuir_itens_caminhoes(capacidade_caminhoes, itens):
   return caminhoes_necessarios
 
 #começa com primeiro trecho com todos os itens, e os remove conforme as paradas
-itens_por_trecho['ARACAJU - BELEM'] = list(itens.keys())
+itens_por_trecho[list(itens_por_trecho.keys())[0]] = list(itens.keys())
 
 for i in range(len(cidades) - 1):
-    trecho = cidades[i] + ' - ' + cidades[i+1]
-    itens_trecho = []
-    if trecho in itens_por_trecho:
-        itens_trecho = itens_por_trecho[trecho]
-    for item, peso in itens.items():
-        if item not in paradas_itens_dict.get(cidades[i], []) and item not in itens_trecho:
-            itens_trecho.append(item)
-    itens_por_trecho[trecho] = itens_trecho
+  trecho = cidades[i] + ' - ' + cidades[i+1]
+  itens_trecho = []
+  if trecho in itens_por_trecho:
+    itens_trecho = itens_por_trecho[trecho]
+  for item, peso in itens.items():
+    if item not in paradas_itens_dict.get(cidades[i], []) and item not in itens_trecho:
+      itens_trecho.append(item)
+  itens_por_trecho[trecho] = itens_trecho
 
 #copia o dicionário itens por trecho, porém com os respectivos pesos em cada item
 itens_por_trecho_com_peso = {}
 
 for trecho, itens_trecho in itens_por_trecho.items():
-    peso_itens_trecho = {}
-    for item in itens_trecho:
-        peso_itens_trecho[item] = itens[item]
-    itens_por_trecho_com_peso[trecho] = peso_itens_trecho
+  peso_itens_trecho = {}
+  for item in itens_trecho:
+    peso_itens_trecho[item] = itens[item]
+  itens_por_trecho_com_peso[trecho] = peso_itens_trecho
+
+print(itens_por_trecho_com_peso)
 
 #chama função de distribuição e armazena quais caminhões serão usados por trecho
 caminhoes_necessarios_por_trecho = {}
 
 for trecho, itens_trecho in itens_por_trecho_com_peso.items():
-    resultado_funcao = distribuir_itens_caminhoes(capacidade_caminhoes, itens_trecho)
-    caminhoes_necessarios_por_trecho[trecho] = resultado_funcao
+  resultado_funcao = distribuir_itens_caminhoes(capacidade_caminhoes, itens_trecho)
+  caminhoes_necessarios_por_trecho[trecho] = resultado_funcao
 
-print(f'caminhoes necessários por trecho: {caminhoes_necessarios_por_trecho}')
+print(f'caminhoes necessários por trecho:\n {caminhoes_necessarios_por_trecho}\n')
 
-#calcula o custo por trecho e o custo total
+#calcula o custo por trecho e armazena
 custo_por_trecho = {}
+
+for trecho, caminhoes in caminhoes_necessarios_por_trecho.items():
+  custo_total_trecho = 0
+  for porte, qtd_caminhoes in caminhoes.items():
+    custo_total_trecho += qtd_caminhoes * custo_caminhoes[porte]
+  custo_total_trecho *= 3 # considerando 3 caminhões por trecho
+  custo_total_trecho += distancias_cidades[trecho] * 0.5 # adicionando custo fixo de R$0,50 por km
+  custo_por_trecho[trecho] = custo_total_trecho
+
+'''
+print(f'custo por trecho: {custo_por_trecho}')
+
+# {'P': 4.87, 'M': 11.92, 'G': 27.44} 9,74
+# resultado esperado{'ARACAJU - BELEM': 38848.68, 'BELEM - VITORIA': 185963.52}
+
 
 custo_total = sum(lista_necessariosXcusto)*km_total
 
@@ -208,7 +239,6 @@ for tamanho, quantidade in caminhoes_necessarios.items():
 
 
 
-'''
 #imprime resultado
 print(f'Saindo de {cidades[0]} até {cidades[-1]}, a distância total a ser percorrida na rota é de {km_total} km')
 print(f'Para transportar os itens {list(itens.keys())},\n de forma a resultar no menor custo por km rodado., serão necessários:')
