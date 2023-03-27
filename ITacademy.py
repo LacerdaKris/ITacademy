@@ -53,7 +53,7 @@ while opcao !=4:
 
   elif opcao == 2:
     #cria lista com as cidades digitadas, e passa pra outra removendo os espaços em branco no início/fim
-    input_cidades = input("Digite quais cidades serão percorridas, separe-as com vírgula: ").split(",")
+    input_cidades = input("Digite as cidades na ordem em que serão percorridas, separe-as com vírgula: ").split(",")
     cidades = [cidade.strip() for cidade in input_cidades]
     
     #dicionário p/ armazenar os pares de trecho entre cidades, e um acumulador do total
@@ -111,97 +111,12 @@ while opcao !=4:
       for parada in paradas_itens:
         for cidade, item in parada.items():
           paradas_itens_dict[unidecode(cidade)] = item
-    
+
     else:
       paradas_itens_dict = {}
 
-    #capacidade máxima de cada caminhão
-    capacidade_caminhoes = {'P': 1000, 'M': 4000, 'G': 10000}
-    
-    # ordena os itens por peso
-    itens_ordenados_por_peso = dict(sorted(itens.items(), key=lambda x: x[1], reverse=True))
-    
-    # identifica quantidade e modelo do(s) caminhão(ões) necessário(s) para o transporte
-    caminhoes_necessarios = {'P': 0, 'M': 0, 'G': 0}
-    peso_atual_carga = peso_total_carga
-    capacidade_atual_caminhoes = {'P': 1000, 'M': 4000, 'G': 10000}
-    itens_atual_caminhoes = {'P': [], 'M': [], 'G': []}
-    
-    while peso_atual_carga > 0:
-      # percorre os itens da carga em ordem decrescente de peso
-      for item, peso in itens_ordenados_por_peso.items():
-        # tenta colocar o item no menor caminhão possível que ainda tem capacidade
-    
-        adicionado = False
-        for modelo in ['G', 'M', 'P']:
-          capacidade = capacidade_atual_caminhoes[modelo]
-          if peso <= capacidade:
-            # adiciona o item ao caminhão, atualiza a capacidade restante
-            peso_atual_carga -= peso
-            capacidade_atual_caminhoes[modelo] -= peso
-            itens_atual_caminhoes[modelo].append(item)
-    
-            # verifica se o item estava em outro caminhão e, se sim, remove do caminhão anterior
-            for tamanho, itens_array in itens_atual_caminhoes.items():
-              if item in itens_array and tamanho != modelo:
-                itens_array.remove(item)
-                capacidade_atual_caminhoes[tamanho] += peso
-    
-            adicionado = True
-            break
-                
-        # se o item não couber em nenhum dos caminhões
-        if not adicionado:
-          # verifica se há capacidade no caminhão G
-          if peso <= capacidade_atual_caminhoes['G']:
-            peso_atual_carga -= peso
-            capacidade_atual_caminhoes['G'] -= peso
-            itens_atual_caminhoes['G'].append(item)
-            caminhoes_necessarios['G'] += 1
-          # se não houver capacidade no caminhão G, transfere os itens atuais para o M ou G
-          else:
-            if sum(capacidade_atual_caminhoes.values()) - min(capacidade_atual_caminhoes.values()) >= peso:
-              for modelo, itens in itens_atual_caminhoes.items():
-                if modelo != 'P' and len(itens) > 0:
-                  peso_transferir = sum([itens_ordenados_por_peso[item] for item in itens])
-                  itens_transferir = itens_atual_caminhoes[modelo].copy()
-                  itens_atual_caminhoes[modelo] = []
-                  capacidade_atual_caminhoes[modelo] += peso_transferir
-                  itens_atual_caminhoes['P'].extend(itens_transferir)
-                  capacidade_atual_caminhoes['P'] += peso_transferir
-                else:
-                  # adiciona um caminhão G em caminhoes_necessarios, remove os itens que estavam no G em itens_atual_caminhoes,
-                  # remove também os itens que estavam no G em itens_ordenados_por_peso, volta a capacidade_atual_caminhoes['G'] a sua
-                  # capacidade máxima e reinicia a verificação
-                  caminhoes_necessarios['G'] += 1
-                  itens_ordenados_por_peso = dict([(item, peso) for item, peso in itens_ordenados_por_peso.items() if item not in itens_atual_caminhoes['G']])
-                  itens_atual_caminhoes['G'] = []
-                  capacidade_atual_caminhoes['G'] = 10000
-                  peso_atual_carga = sum(itens_ordenados_por_peso.values())
-                  break
-    
-    
-    #ao final do loop while, adiciona a caminhoes_necessarios os que tenham qualquer item restante
-    for tamanho, itens_array in itens_atual_caminhoes.items():
-      if len(itens_array) > 0:
-        caminhoes_necessarios[tamanho] += 1
-    
-    #calcula o custo total pela qtd de cada caminhão X km
-    lista_necessariosXcusto = []
-    for tamanho, quantidade in caminhoes_necessarios.items():
-        lista_necessariosXcusto.append(custo_caminhoes[tamanho] * quantidade)
-    
-    custo_total = sum(lista_necessariosXcusto)*km_total
-    
-    # exibe a quantidade de caminhões necessários para transportar a carga
-    print("Para transportar a carga, serão necessários:")
-    for modelo, qtd in caminhoes_necessarios.items():
-      if qtd > 0:
-        print(f"{qtd} caminhão(ões) de porte {modelo}")
+  #  >>> INCLUIR TRECHO DO MÓDULO TESTE AQUI <<<
 
-
-
-      
   elif opcao == 3:
     print("Dados estatísticos")
   elif opcao == 4:
