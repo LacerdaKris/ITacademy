@@ -1,4 +1,4 @@
-itens_trecho = {'LANCHA': 10000, 'SUV': 8000, 'CARRO': 3000, 'MOTO': 2000}
+itens_trecho = {'LANCHA': 8000, 'SUV': 1000, 'CARRO': 700, 'MOTO': 700}
 peso_total_carga = sum(itens_trecho.values())
 capacidade_caminhoes = {'P': 1000, 'M': 4000, 'G': 10000}
 
@@ -15,6 +15,7 @@ def distribuir_itens_caminhoes(capacidade_caminhoes, itens):
   itens_na_funcao = itens.copy()
   #começa com o peso total da carga, e depois vai reduzindo conforme alocação em caminhoes
   peso_atual_carga = sum(itens.values())
+
   #verificar se é possível alocar todos os itens em um único caminhão, se sim, pular loop while
   maior_capacidade = [1000, 4000, 10000]
   for capacidade_maxima in maior_capacidade:
@@ -42,7 +43,6 @@ def distribuir_itens_caminhoes(capacidade_caminhoes, itens):
         capacidade = capacidade_atual_caminhoes[modelo]
         if peso <= capacidade:
           #adiciona o item no caminhão, e atualiza a capacidade restante do caminhão
-          peso_atual_carga -= peso
           capacidade_atual_caminhoes[modelo] -= peso
           itens_atual_caminhoes[modelo].append(item)
 
@@ -98,12 +98,29 @@ def distribuir_itens_caminhoes(capacidade_caminhoes, itens):
               itens_atual_caminhoes[modelo].append(item)
               caminhoes_necessarios[modelo] += 1
 
-          itens_na_funcao.pop(item)
+          if itens_na_funcao:
+            #se a capacidade atual de algum caminhão ficar menor que o item restante mais leve, limpá-lo
+            item_mais_leve = min(itens_na_funcao.values())
 
+            for tamanho_modelo, capacidade_atual_do_modelo in capacidade_atual_caminhoes.items():
+              if capacidade_atual_do_modelo < item_mais_leve < capacidade_caminhoes[tamanho_modelo]:
+
+                # Limpa a capacidade do caminhão
+                capacidade_atual_caminhoes[tamanho_modelo] = capacidade_caminhoes[tamanho_modelo]
+                itens_atual_caminhoes[tamanho_modelo] = []
+                caminhoes_necessarios[tamanho_modelo] += 1
+          
+          else:
+            print('SEM MAIS ITENS')
+  
           break
+
+      itens_na_funcao.pop(item)
+
+      if not itens_na_funcao:
+        peso_atual_carga = 0
 
   return caminhoes_necessarios
 
-
 resultado_funcao = distribuir_itens_caminhoes(capacidade_caminhoes, itens_trecho)
-print(resultado_funcao)
+print(f'{resultado_funcao}\n')
