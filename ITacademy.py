@@ -183,12 +183,16 @@ while opcao !=4:
             caminhoes_necessarios['G'] += 1
             capacidade_atual_caminhoes['G'] = capacidade_caminhoes['G'] - peso_atual_carga
             itens_atual_caminhoes['G'] = list(itens.keys())
+    
           peso_atual_carga = 0
           break
     
       while peso_atual_carga > 0:
         #itera nos itens da carga do maior ao menor peso
         for item, peso in itens.items():
+          itens_na_funcao.pop(item)
+          if not itens_na_funcao:
+            peso_atual_carga = 0
           #tenta colocar o item no maior caminhão que ainda tem capacidade
           for modelo in ['G', 'M', 'P']:
             capacidade = capacidade_atual_caminhoes[modelo]
@@ -198,10 +202,11 @@ while opcao !=4:
               capacidade_atual_caminhoes[modelo] -= peso
               itens_atual_caminhoes[modelo].append(item)
     
-              if capacidade_atual_caminhoes[modelo] == 0:
+              if itens_na_funcao and (capacidade_atual_caminhoes[modelo] == 0):
                 caminhoes_necessarios[modelo] += 1
                 capacidade_atual_caminhoes[modelo] = capacidade_caminhoes[modelo]
                 itens_atual_caminhoes[modelo] = []
+                break
     
               #calcula a capacidade restante em todos os caminhões após a inclusão do item
               capacidades_restantes = {k: v-peso if k!=modelo else v for k,v in capacidade_atual_caminhoes.items()}
@@ -237,36 +242,32 @@ while opcao !=4:
                     combinacao2_necessarios[tamanho] = caminhoes_necessarios[tamanho]
     
                 custo_caminhoes_necessarios_se_item_alterado = sum([custo_caminhoes[modelo_menor_restante]*combinacao2_necessarios[modelo_menor_restante] for modelo_menor_restante in combinacao2_necessarios])
-              
+     
                 if custo_caminhoes_necessarios_atual > custo_caminhoes_necessarios_se_item_alterado:
                   capacidade_atual_caminhoes[modelo_menor_restante] -= peso
                   capacidade_atual_caminhoes[modelo] += peso    
                   caminhoes_necessarios[modelo_menor_restante] += 1
-                  
+    
                 else:
                   itens_atual_caminhoes[modelo_menor_restante].remove(item)
                   itens_atual_caminhoes[modelo].append(item)
+                  caminhoes_necessarios[modelo] -=1
+    
+              else:    
+                if itens_atual_caminhoes[modelo] and itens_na_funcao:
                   caminhoes_necessarios[modelo] += 1
-              
-              else:
-                if itens_atual_caminhoes[modelo]:
-                  caminhoes_necessarios[modelo] += 1
-      
+    
+              if itens_na_funcao:
+                #se a capacidade atual de algum caminhão ficar menor que o item restante mais leve, limpá-lo
+                item_mais_leve = min(itens_na_funcao.values())
+                for tamanho_modelo, capacidade_atual_do_modelo in capacidade_atual_caminhoes.items():
+                  if capacidade_atual_do_modelo < item_mais_leve > max(capacidade_atual_caminhoes.values()):
+                    # Limpa a capacidade do caminhão
+                    capacidade_atual_caminhoes[tamanho_modelo] = capacidade_caminhoes[tamanho_modelo]
+                    itens_atual_caminhoes[tamanho_modelo] = []
+                    caminhoes_necessarios[tamanho_modelo] += 1
+                    #break
               break
-    
-          if itens_na_funcao:
-            #se a capacidade atual de algum caminhão ficar menor que o item restante mais leve, limpá-lo
-            item_mais_leve = min(itens_na_funcao.values())
-            for tamanho_modelo, capacidade_atual_do_modelo in capacidade_atual_caminhoes.items():
-              if capacidade_atual_do_modelo < item_mais_leve > max(capacidade_atual_caminhoes.values()):
-                # Limpa a capacidade do caminhão
-                capacidade_atual_caminhoes[tamanho_modelo] = capacidade_caminhoes[tamanho_modelo]
-                itens_atual_caminhoes[tamanho_modelo] = []
-                caminhoes_necessarios[tamanho_modelo] += 1
-    
-          itens_na_funcao.pop(item)
-          if not itens_na_funcao:
-            peso_atual_carga = 0
     
       return caminhoes_necessarios
     
