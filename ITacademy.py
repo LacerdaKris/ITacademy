@@ -8,8 +8,9 @@ capacidade_caminhoes = {'P': 1000, 'M': 4000, 'G': 10000}
 #custo por km rodado de cada caminhão
 custo_caminhoes = {'P': 4.87, 'M': 11.92, 'G': 27.44}
 
-#lista para armazenar os transportes cadastrados na opção 2 do menu
+#lista para armazenar os transportes cadastrados na opção 2 do menu e seu contador
 transportes_cadastrados = []
+contador_transportes_cadastrados = 0
 
 def menu():
   print("Menu:")
@@ -121,7 +122,7 @@ while opcao !=4:
     else:
       paradas_itens_dict = {}
     
-        #organiza num dicionário os itens de cada trecho
+    #organiza num dicionário os itens de cada trecho
     itens_por_trecho = {}
     for trecho in distancias_cidades:
       itens_por_trecho[trecho] = []
@@ -281,15 +282,18 @@ while opcao !=4:
     custo_por_trecho = {}
     
     for trecho, caminhoes in caminhoes_necessarios_por_trecho.items():
-        valor_total_por_km = 0
-        for caminhao, quantidade in caminhoes.items():
-            valor_total_por_km += quantidade * custo_caminhoes[caminhao]
-        valor_total_trecho = valor_total_por_km * distancias_cidades[trecho]
-        custo_por_trecho[trecho] = valor_total_trecho
+      valor_total_por_km = 0
+      for caminhao, quantidade in caminhoes.items():
+        valor_total_por_km += quantidade * custo_caminhoes[caminhao]
+      valor_total_trecho = valor_total_por_km * distancias_cidades[trecho]
+      custo_por_trecho[trecho] = valor_total_trecho
     
     custo_total = sum(custo_por_trecho.values())
     
     #imprime resultado
+    contador_transportes_cadastrados += 1
+
+    print(f'TRANSPORTE DE Nº {contador_transportes_cadastrados} CADASTRADO COM SUCESSO!')
     print(f'Saindo de {cidades[0]} até {cidades[-1]}, a distância total a ser percorrida na rota é de {km_total} km.')
     if paradas_itens_dict:
       paradas_cidades = [c for c in paradas_itens_dict.keys()] 
@@ -302,10 +306,35 @@ while opcao !=4:
       for caminhao, qtd in caminhoes.items():
         if qtd > 0:
           print(f'{qtd} caminhão(ões) de porte {caminhao}')
-    print(f'O valor total do frete é R$ {custo_total:.2f}, sendo R$ {custo_total/len(custo_por_trecho):.2f} o custo médio por trecho.')
+    print(f'O valor total do frete é R$ {custo_total:.2f}, sendo R$ {custo_total/len(custo_por_trecho):.2f} o custo médio por trecho.\n')
+
+    #calcula e armazena total por cada tamanho de caminhão em cada trecho
+    custo_por_tamanho_de_caminhao_por_trecho = {}
+    for trecho, quantidades in caminhoes_necessarios_por_trecho.items():
+      custo_por_tamanho_de_caminhao_por_trecho[trecho] = {}
+      for tamanho, quantidade in quantidades.items():
+          custo_por_tamanho_de_caminhao_por_trecho[trecho][tamanho] = custo_caminhoes[tamanho] * quantidade * distancias_cidades[trecho]
+    
+    #soma e armazena total por cada total de caminhão maior que zero
+    custo_por_tamanho_total = {'P': 0, 'M': 0, 'G': 0}
+    for trecho, custo_por_tamanho in custo_por_tamanho_de_caminhao_por_trecho.items():
+      for tamanho, custo in custo_por_tamanho.items():
+          if custo > 0:
+              custo_por_tamanho_total[tamanho] += custo
+
+    #pela string da primeira cidade da lista cidades, busca caminhôes necessários no dicionario
+    caminhoes_alocados = next(v for k, v in caminhoes_necessarios_por_trecho.items() if cidades[0] in k)
+
+    dados_do_transporte = 'TRANSPORTE DE Nº ' + str(contador_transportes_cadastrados) + ': \n Custo total: R$ ' + str(custo_total) + ' - Custo por trecho: R$ ' + str(custo_por_trecho) + '\n Custo médio por km: R$ ' + str(custo_total/km_total) + ' - e por tipo de produto: R$ ' + str(custo_total/len(itens)) + '\n Custo total por trecho: R$ ' + str(custo_por_tamanho_total) + '\n Custo total para cada modalidade de transporte: R$ ' + str(custo_por_tamanho_total) + '\n Número total de veículos deslocados: ' + str(sum(caminhoes_alocados.values())) + '\n Total de itens transportados: ' + str(len(itens))
+    
+    transportes_cadastrados.append(dados_do_transporte)
 
   elif opcao == 3:
-    print("Dados estatísticos")
+    print(f'Há {contador_transportes_cadastrados} transportes cadastrados!')
+    for transporte in transportes_cadastrados:
+      print(transporte)
+      print(' ')
+
   elif opcao == 4:
     print("Finalizando o programa...")
     break
