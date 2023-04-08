@@ -44,9 +44,6 @@ def distribuir_itens_caminhoes(capacidade_caminhoes, itens):
       for modelo in ['G', 'M', 'P']:
         capacidade = capacidade_atual_caminhoes[modelo]
         if peso <= capacidade:
-
-          print(' ')
-
           #adiciona o item no caminhão, e reduz peso do item da capacidade do caminhão
           capacidade_atual_caminhoes[modelo] -= peso
           itens_atual_caminhoes[modelo].append(item)
@@ -60,27 +57,21 @@ def distribuir_itens_caminhoes(capacidade_caminhoes, itens):
 
           #calcula a capacidade restante em todos os caminhões após a inclusão do item
           capacidades_restantes = {k: v-peso if k!=modelo else v for k,v in capacidade_atual_caminhoes.items()}
-          #escolhe o caminhão que deixaria a menor capacidade restante, descartando os com capacidade negativa
+          #verifica o que deixaria a menor capacidade restante, descartando os com capacidade negativa
           modelo_menor_restante = min([modelo for modelo in capacidades_restantes if capacidades_restantes[modelo] >= 0], key=lambda modelo: abs(capacidades_restantes[modelo]))
 
-          #verifica se há um caminhão com espaço que não esteja vazio e prioriza
+          #verifica se há um caminhão com espaço E que não esteja vazio e prioriza
           modelo_prioridade = None
           for modelo_troca in capacidade_atual_caminhoes.keys():
-            if (capacidade_atual_caminhoes[modelo_troca] > 0) and (itens_atual_caminhoes[modelo_troca]) and modelo_troca != modelo:
+            if (capacidade_atual_caminhoes[modelo_troca] > peso) and (itens_atual_caminhoes[modelo_troca]) and modelo_troca != modelo:
               modelo_prioridade = modelo_troca
               break
-          
-          #se houver caminhão com espaço que não esteja vazio, escolhe o modelo com prioridade
+          #se houver, escolhe o modelo com prioridade no lugar do modelo_menor_restante
           if modelo_prioridade:
             modelo_menor_restante = modelo_prioridade
-          #caso contrário, escolhe o modelo com menor capacidade restante, desconsiderando negativas
-          else:
-            modelo_menor_restante = modelo_menor_restante
-
-          print(f'{item} foi 1º incluso em {modelo},\n capacidades_atualizadas: {capacidade_atual_caminhoes}')
 
           capacidade_menor_restante = capacidades_restantes[modelo_menor_restante]
-          #se a capacidade restante e custo de outro caminhão for menor que o do item colocado, transferir
+          #se a capacidade restante/custo de outro caminhão for menor que o do item colocado, transferir
           #alterar item de caminhão (remove o item do caminhão atual e adiciona no outro)
           custo_caminhoes = {'P': 4.87, 'M': 11.92, 'G': 27.44}
 
@@ -92,8 +83,6 @@ def distribuir_itens_caminhoes(capacidade_caminhoes, itens):
             else:
               combinacao1_necessarios[tamanho] = caminhoes_necessarios[tamanho]
           custo_caminhoes_necessarios_atual = sum([custo_caminhoes[tamanho]*combinacao1_necessarios[tamanho] for tamanho in combinacao1_necessarios])
-
-          print(f'combinacao1_necessarios: {combinacao1_necessarios}')
 
           if capacidade_menor_restante < capacidade_atual_caminhoes[modelo]:
             
@@ -117,8 +106,6 @@ def distribuir_itens_caminhoes(capacidade_caminhoes, itens):
               if not itens_na_funcao:
                 caminhoes_necessarios = combinacao2_necessarios
 
-              print(f'{item} passado de {modelo} para modelo_menor_restante: {modelo_menor_restante}')
-
             else:
               itens_atual_caminhoes[modelo_menor_restante].remove(item)
               itens_atual_caminhoes[modelo].append(item)
@@ -136,8 +123,6 @@ def distribuir_itens_caminhoes(capacidade_caminhoes, itens):
         for tamanho_modelo, capacidade_atual_do_modelo in capacidade_atual_caminhoes.items():
           if capacidade_atual_do_modelo < item_mais_leve:
             if itens_atual_caminhoes[tamanho_modelo]:
-              # Limpa a capacidade do caminhão
-              print('ENTROU NA LINHA 137!!!!!!!!')
               capacidade_atual_caminhoes[tamanho_modelo] = capacidade_caminhoes[tamanho_modelo]
               itens_atual_caminhoes[tamanho_modelo] = []
               caminhoes_necessarios[tamanho_modelo] += 1
@@ -145,4 +130,4 @@ def distribuir_itens_caminhoes(capacidade_caminhoes, itens):
   return caminhoes_necessarios
 
 resultado_funcao = distribuir_itens_caminhoes(capacidade_caminhoes, itens_trecho)
-print(f'{resultado_funcao}\n')
+print(resultado_funcao)
