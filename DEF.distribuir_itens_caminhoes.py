@@ -16,9 +16,10 @@ def distribuir_itens_caminhoes(capacidade_caminhoes, itens):
   peso_atual_carga = sum(itens.values())
 
   #verificar se é possível alocar todos os itens em um único caminhão, se sim, pular loop while
-  maior_capacidade = [1000, 4000, 10000]
-  for capacidade_maxima in maior_capacidade:
-    if peso_atual_carga <= capacidade_maxima:
+  for modelo, capacidade_maxima in capacidade_atual_caminhoes.items():
+    #limites de sobras pra cada caminhão valer a pena levar todos os itens
+    sobras_maximas = {'P': 1000, 'M': 1000, 'G': 4000}
+    if (peso_atual_carga <= capacidade_maxima) and (capacidade_maxima - peso_atual_carga < sobras_maximas[modelo]):
       if capacidade_maxima == 1000:
         caminhoes_necessarios['P'] += 1
         capacidade_atual_caminhoes['P'] = capacidade_caminhoes['P'] - peso_atual_carga
