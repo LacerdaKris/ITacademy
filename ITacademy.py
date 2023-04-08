@@ -59,6 +59,14 @@ while opcao !=4:
     input_cidades = input("Digite quais cidades serão percorridas, separe-as com vírgula: ").split(",")
     cidades_como_no_input = [cidade.strip() for cidade in input_cidades]
     cidades = [unidecode(cidade).upper() for cidade in cidades_como_no_input]
+
+    for cidade in cidades:
+      if cidade not in distancias:
+        print(f"Infelizmente ainda não atendemos a cidade: {cidade}.")
+        input_cidades = input("Digite novamente quais cidades serão percorridas, separe-as com vírgula: ").split(",")
+        cidades_como_no_input = [cidade.strip() for cidade in input_cidades]
+        cidades = [unidecode(cidade).upper() for cidade in cidades_como_no_input]
+        continue
     
     #dicionário p/ armazenar os pares de trecho entre cidades, e um acumulador do total
     distancias_cidades = {}
@@ -103,6 +111,13 @@ while opcao !=4:
       input_paradas = input("Em quais cidades haverá paradas com retirada de carga, separe-as com vírgula: ").split(",")
       paradas_cidades_como_no_input = [parada.strip() for parada in input_paradas]
       paradas_cidades = [unidecode(parada).upper() for parada in paradas_cidades_como_no_input]
+      for parada in paradas_cidades:
+        if parada not in cidades:
+          print(f"A cidade {parada} não consta na rota!")
+          input_paradas = input("Digite novamente em quais cidades haverá paradas com retirada de carga, separe-as com vírgula: ").split(",")
+          paradas_cidades_como_no_input = [parada.strip() for parada in input_paradas]
+          paradas_cidades = [unidecode(parada).upper() for parada in paradas_cidades_como_no_input]
+          continue
 
       paradas_itens = []
       #pra cada cidade, perguntar e armazenar num array quais itens serão descarregados
@@ -110,6 +125,13 @@ while opcao !=4:
         input_itens_cidade = input(f"Quais itens serão retirados em {cidade}? Separe-os com vírgula: ").split(",")
         itens_cidade_como_no_input = [item.strip() for item in input_itens_cidade]
         itens_cidade = [unidecode(item).upper() for item in itens_cidade_como_no_input]
+        for item in itens_cidade:
+          if item not in itens:
+            print(f"O item {item} não consta na carga, portanto não pode ser retirado!")
+            input_itens_cidade = input(f"Digite novamente quais itens serão retirados em {cidade}? Separe-os com vírgula: ").split(",")
+            itens_cidade_como_no_input = [item.strip() for item in input_itens_cidade]
+            itens_cidade = [unidecode(item).upper() for item in itens_cidade_como_no_input]
+            continue
         #adicionar cada item ao array como um dict, sendo cidade a chave e itens o valor
         paradas_itens.append({cidade.upper(): [item.upper() for item in itens_cidade]})
 
@@ -157,7 +179,7 @@ while opcao !=4:
     
     #função para distribuir os itens da melhor forma entre caminhões
     def distribuir_itens_caminhoes(capacidade_caminhoes, itens):
-    
+
       #identifica quantidade e modelo do(s) caminhão(ões) necessário(s) para o transporte
       caminhoes_necessarios = {'P': 0, 'M': 0, 'G': 0}
       capacidade_atual_caminhoes = {'P': 1000, 'M': 4000, 'G': 10000}
@@ -168,9 +190,10 @@ while opcao !=4:
       peso_atual_carga = sum(itens.values())
     
       #verificar se é possível alocar todos os itens em um único caminhão, se sim, pular loop while
-      maior_capacidade = [1000, 4000, 10000]
-      for capacidade_maxima in maior_capacidade:
-        if peso_atual_carga <= capacidade_maxima:
+      for modelo, capacidade_maxima in capacidade_atual_caminhoes.items():
+        #limites de sobras pra cada caminhão valer a pena levar todos os itens
+        sobras_maximas = {'P': 1000, 'M': 1000, 'G': 4000}
+        if (peso_atual_carga <= capacidade_maxima) and (capacidade_maxima - peso_atual_carga < sobras_maximas[modelo]):
           if capacidade_maxima == 1000:
             caminhoes_necessarios['P'] += 1
             capacidade_atual_caminhoes['P'] = capacidade_caminhoes['P'] - peso_atual_carga
@@ -190,18 +213,17 @@ while opcao !=4:
       while peso_atual_carga > 0:
         #itera nos itens da carga do maior ao menor peso
         for item, peso in itens.items():
+          peso_atual_carga -= peso
           itens_na_funcao.pop(item)
-          if not itens_na_funcao:
-            peso_atual_carga = 0
           #tenta colocar o item no maior caminhão que ainda tem capacidade
           for modelo in ['G', 'M', 'P']:
             capacidade = capacidade_atual_caminhoes[modelo]
             if peso <= capacidade:
-    
-              #adiciona o item no caminhão, e reduz pedo do item da capacidade do caminhão
+              #adiciona o item no caminhão, e reduz peso do item da capacidade do caminhão
               capacidade_atual_caminhoes[modelo] -= peso
               itens_atual_caminhoes[modelo].append(item)
     
+              #se a capacidade do caminhão zerar, limpá-lo
               if itens_na_funcao and (capacidade_atual_caminhoes[modelo] == 0):
                 caminhoes_necessarios[modelo] += 1
                 capacidade_atual_caminhoes[modelo] = capacidade_caminhoes[modelo]
@@ -210,67 +232,77 @@ while opcao !=4:
     
               #calcula a capacidade restante em todos os caminhões após a inclusão do item
               capacidades_restantes = {k: v-peso if k!=modelo else v for k,v in capacidade_atual_caminhoes.items()}
-    
-              #escolhe o caminhão que deixaria a menor capacidade restante, descartando os com capacidade negativa
+              #verifica o que deixaria a menor capacidade restante, descartando os com capacidade negativa
               modelo_menor_restante = min([modelo for modelo in capacidades_restantes if capacidades_restantes[modelo] >= 0], key=lambda modelo: abs(capacidades_restantes[modelo]))
     
+              #verifica se há um caminhão com espaço E que não esteja vazio e prioriza
+              modelo_prioridade = None
+              for modelo_troca in capacidade_atual_caminhoes.keys():
+                if (capacidade_atual_caminhoes[modelo_troca] > peso) and (itens_atual_caminhoes[modelo_troca]) and modelo_troca != modelo:
+                  modelo_prioridade = modelo_troca
+                  break
+              #se houver, escolhe o modelo com prioridade no lugar do modelo_menor_restante
+              if modelo_prioridade:
+                modelo_menor_restante = modelo_prioridade
+    
               capacidade_menor_restante = capacidades_restantes[modelo_menor_restante]
-              #se a capacidade restante e custo de outro caminhão for menor que o do item colocado, transferir
+              #se a capacidade restante/custo de outro caminhão for menor que o do item colocado, transferir
               #alterar item de caminhão (remove o item do caminhão atual e adiciona no outro)
               custo_caminhoes = {'P': 4.87, 'M': 11.92, 'G': 27.44}
     
-              if capacidade_menor_restante < capacidade_atual_caminhoes[modelo]:
-                combinacao1_necessarios = {'P': 0, 'M': 0, 'G': 0}
+              #calcula o custo da combinação de caminhões como está
+              combinacao1_necessarios = {'P': 0, 'M': 0, 'G': 0}
+              for tamanho in combinacao1_necessarios.keys():
+                if itens_atual_caminhoes[tamanho]:
+                  combinacao1_necessarios[tamanho] = caminhoes_necessarios[tamanho]+1
+                else:
+                  combinacao1_necessarios[tamanho] = caminhoes_necessarios[tamanho]
+              custo_caminhoes_necessarios_atual = sum([custo_caminhoes[tamanho]*combinacao1_necessarios[tamanho] for tamanho in combinacao1_necessarios])
     
-                for tamanho in combinacao1_necessarios.keys():
-                  if itens_atual_caminhoes[tamanho]:
-                    combinacao1_necessarios[tamanho] = caminhoes_necessarios[tamanho]+1
-                  else:
-                    combinacao1_necessarios[tamanho] = caminhoes_necessarios[tamanho]
-                custo_caminhoes_necessarios_atual = sum([custo_caminhoes[tamanho]*combinacao1_necessarios[tamanho] for tamanho in combinacao1_necessarios])
+              if capacidade_menor_restante < capacidade_atual_caminhoes[modelo]:
+                
                 #simula alterações e se ñ ficar mais barato, desfaz
                 itens_atual_caminhoes[modelo_menor_restante].append(item)
                 itens_atual_caminhoes[modelo].remove(item)
     
                 #forma combinação com as alterações p/ calcular
                 combinacao2_necessarios = {'P': 0, 'M': 0, 'G': 0}
-    
                 for tamanho in combinacao2_necessarios.keys():
                   if itens_atual_caminhoes[tamanho]:
                     combinacao2_necessarios[tamanho] = caminhoes_necessarios[tamanho]+1
                   else:
                     combinacao2_necessarios[tamanho] = caminhoes_necessarios[tamanho]
-    
-                custo_caminhoes_necessarios_se_item_alterado = sum([custo_caminhoes[modelo_menor_restante]*combinacao2_necessarios[modelo_menor_restante] for modelo_menor_restante in combinacao2_necessarios])
-     
+                custo_caminhoes_necessarios_se_item_alterado = sum([custo_caminhoes[tamanho]*combinacao2_necessarios[tamanho] for tamanho in combinacao2_necessarios])
+              
+                #se o cuto da troca ficar menor, mantê-la. Se não, desfazer a troca
                 if custo_caminhoes_necessarios_atual > custo_caminhoes_necessarios_se_item_alterado:
                   capacidade_atual_caminhoes[modelo_menor_restante] -= peso
-                  capacidade_atual_caminhoes[modelo] += peso    
-                  caminhoes_necessarios[modelo_menor_restante] += 1
+                  capacidade_atual_caminhoes[modelo] += peso
+                  if not itens_na_funcao:
+                    caminhoes_necessarios = combinacao2_necessarios
     
                 else:
                   itens_atual_caminhoes[modelo_menor_restante].remove(item)
                   itens_atual_caminhoes[modelo].append(item)
-                  caminhoes_necessarios[modelo] -=1
+                  if not itens_na_funcao:
+                    caminhoes_necessarios = combinacao1_necessarios
     
-              else:    
-                if itens_atual_caminhoes[modelo] and itens_na_funcao:
-                  caminhoes_necessarios[modelo] += 1
+              else:
+                if not itens_na_funcao:
+                  caminhoes_necessarios = combinacao1_necessarios
+              break 
     
-              if itens_na_funcao:
-                #se a capacidade atual de algum caminhão ficar menor que o item restante mais leve, limpá-lo
-                item_mais_leve = min(itens_na_funcao.values())
-                for tamanho_modelo, capacidade_atual_do_modelo in capacidade_atual_caminhoes.items():
-                  if capacidade_atual_do_modelo < item_mais_leve > max(capacidade_atual_caminhoes.values()):
-                    # Limpa a capacidade do caminhão
-                    capacidade_atual_caminhoes[tamanho_modelo] = capacidade_caminhoes[tamanho_modelo]
-                    itens_atual_caminhoes[tamanho_modelo] = []
-                    caminhoes_necessarios[tamanho_modelo] += 1
-                    #break
-              break
-    
+          if itens_na_funcao:
+            #se a capacidade atual de algum caminhão ficar menor que o item restante mais leve, limpá-lo
+            item_mais_leve = min(itens_na_funcao.values())
+            for tamanho_modelo, capacidade_atual_do_modelo in capacidade_atual_caminhoes.items():
+              if capacidade_atual_do_modelo < item_mais_leve:
+                if itens_atual_caminhoes[tamanho_modelo]:
+                  capacidade_atual_caminhoes[tamanho_modelo] = capacidade_caminhoes[tamanho_modelo]
+                  itens_atual_caminhoes[tamanho_modelo] = []
+                  caminhoes_necessarios[tamanho_modelo] += 1
+             
       return caminhoes_necessarios
-    
     
     #chama função de distribuição e armazena quais caminhões serão usados por trecho
     caminhoes_necessarios_por_trecho = {}
@@ -287,20 +319,20 @@ while opcao !=4:
       for caminhao, quantidade in caminhoes.items():
         valor_total_por_km += quantidade * custo_caminhoes[caminhao]
       valor_total_trecho = valor_total_por_km * distancias_cidades[trecho]
-      custo_por_trecho[trecho] = valor_total_trecho
+      custo_por_trecho[trecho] = round(valor_total_trecho)
     
     custo_total = sum(custo_por_trecho.values())
     
     #imprime resultado
     contador_transportes_cadastrados += 1
 
-    print(f'TRANSPORTE DE Nº {contador_transportes_cadastrados} CADASTRADO COM SUCESSO!')
-    print(f'Saindo de {cidades[0]} até {cidades[-1]}, a distância total a ser percorrida na rota é de {km_total} km.')
+    print(f'TRANSPORTE DE Nº {contador_transportes_cadastrados} CADASTRADO COM SUCESSO!\n')
+    print(f'Saindo de {cidades[0]} até {cidades[-1]}, a distância total a ser percorrida na rota é de {km_total} km')
     if paradas_itens_dict:
       paradas_cidades = [c for c in paradas_itens_dict.keys()] 
       paradas_cidades_string = ', '.join(str(cidade) for cidade in paradas_cidades)
       print(f' - considerando paradas com itens a descarregar em {paradas_cidades_string}.')
-    print(f'Para transportar os itens {list(itens.keys())},\n de forma a resultar no menor custo por km rodado, serão necessários:')
+    print(f'Para transportar os itens {", ".join(itens.keys())}, de forma a resultar no menor custo por km rodado, serão necessários:')
     #imprime quantidade de caminhões necessários para transportar a carga
     for trecho, caminhoes in caminhoes_necessarios_por_trecho.items():
       print(f'No trecho {trecho}')
@@ -314,25 +346,32 @@ while opcao !=4:
     for trecho, quantidades in caminhoes_necessarios_por_trecho.items():
       custo_por_tamanho_de_caminhao_por_trecho[trecho] = {}
       for tamanho, quantidade in quantidades.items():
-          custo_por_tamanho_de_caminhao_por_trecho[trecho][tamanho] = custo_caminhoes[tamanho] * quantidade * distancias_cidades[trecho]
+        custo_por_tamanho_de_caminhao_por_trecho[trecho][tamanho] = round(custo_caminhoes[tamanho] * quantidade * distancias_cidades[trecho], 2)
     
     #soma e armazena total por cada total de caminhão maior que zero
     custo_por_tamanho_total = {'P': 0, 'M': 0, 'G': 0}
     for trecho, custo_por_tamanho in custo_por_tamanho_de_caminhao_por_trecho.items():
       for tamanho, custo in custo_por_tamanho.items():
-          if custo > 0:
-              custo_por_tamanho_total[tamanho] += custo
+        if custo > 0:
+          custo_por_tamanho_total[tamanho] += custo
 
     #pela string da primeira cidade da lista cidades, busca caminhôes necessários no dicionario
     caminhoes_alocados = next(v for k, v in caminhoes_necessarios_por_trecho.items() if cidades[0] in k)
+    custo_medio_por_km = round(custo_total/km_total, 2)
+    custo_por_produto_formatado = round(custo_total/len(itens))
+    custo_por_trecho_formatado = "\n".join([f"{chave}: {valor}" for chave, valor in custo_por_trecho.items()])
+    custo_por_tamanho_de_caminhao_por_trecho_formatado = "\n".join([f"{chave}: {valor}" for chave, valor in custo_por_tamanho_de_caminhao_por_trecho.items()])
+    custo_por_tamanho_total_formatado = ", ".join(f"{chave}: {valor}" for chave, valor in custo_por_tamanho_total.items())
+    custo_total_formatado = round(custo_total)
 
-    dados_do_transporte = 'TRANSPORTE DE Nº ' + str(contador_transportes_cadastrados) + ': \n Custo total: R$ ' + str(custo_total) + ' - Custo por trecho: R$ ' + str(custo_por_trecho) + '\n Custo médio por km: R$ ' + str(custo_total/km_total) + ' - e por tipo de produto: R$ ' + str(custo_total/len(itens)) + '\n Custo total por trecho: R$ ' + str(custo_por_tamanho_total) + '\n Custo total para cada modalidade de transporte: R$ ' + str(custo_por_tamanho_total) + '\n Número total de veículos deslocados: ' + str(sum(caminhoes_alocados.values())) + '\n Total de itens transportados: ' + str(len(itens))
+    dados_do_transporte = 'TRANSPORTE DE Nº ' + str(contador_transportes_cadastrados) + ': \n Custo total para os ' + str(km_total) + 'km da rota: R$ ' + str(custo_total_formatado) + '\n Custo por trecho:\n' + str(custo_por_trecho_formatado) + '\n Custo médio por km: R$ ' + str(custo_medio_por_km) + ' - e por tipo de produto: R$ ' + str(custo_por_produto_formatado) + '\n Custo por caminhão em cada trecho:\n' + str(custo_por_tamanho_de_caminhao_por_trecho_formatado) + '\n Custo total para cada modalidade de transporte:\n' + str(custo_por_tamanho_total_formatado) + '\n Número total de veículos deslocados: ' + str(sum(caminhoes_alocados.values())) + '\n Total de itens transportados: ' + str(len(itens))
     
     transportes_cadastrados.append(dados_do_transporte)
 
   elif opcao == 3:
     print(f'Há {contador_transportes_cadastrados} transportes cadastrados!')
     for transporte in transportes_cadastrados:
+      print('--------------------------------')
       print(transporte)
       print(' ')
 
